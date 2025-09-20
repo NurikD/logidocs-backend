@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 
 class Document(models.Model):
@@ -8,8 +9,16 @@ class Document(models.Model):
     expires_at = models.DateField(null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    # ВЛАДЕЛЕЦ (один к одному пользователю)
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,      # чтобы нельзя было удалить пользователя с документами
+        related_name="documents",
+        null=True, blank=True,         # сначала разрешим null, затем можно ужесточить
+        help_text="Пользователь-владелец документа",
+    )
+
     def replace_file(self, new_file):
-        # при замене файла увеличиваем версию
         self.file = new_file
         self.version = (self.version or 0) + 1
 

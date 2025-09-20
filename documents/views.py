@@ -1,4 +1,4 @@
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.generics import ListAPIView, get_object_or_404
@@ -9,10 +9,10 @@ from .serializers import DocumentSerializer
 class DocumentListAPI(ListAPIView):
     queryset = Document.objects.all().order_by("title")
     serializer_class = DocumentSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
 class DocumentDownloadAPI(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     def get(self, request, pk):
         doc = get_object_or_404(Document, pk=pk)
         f = doc.file.open("rb")

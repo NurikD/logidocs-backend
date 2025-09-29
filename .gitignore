@@ -1,3 +1,25 @@
-venv
-sqlite
+# База данных
+db.sqlite3
 
+# Python/Django
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+env3/
+.venv/
+*.env
+
+# Игнорируем миграции в некоторых случаях (если не нужны)
+# migrations/
+# !migrations/__init__.py
+
+# macOS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/

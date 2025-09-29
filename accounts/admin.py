@@ -4,11 +4,21 @@ from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 from django.contrib.auth.models import Group
 from django.utils.crypto import get_random_string
 from django.utils.html import format_html
-
+from .models import Document, User
 from .models import User
+
+# accounts/admin.py (фрагменты)
+class DocumentInline(admin.StackedInline):
+    model = Document
+    extra = 1
+    fields = ("title", "kind", "file", "is_active", "expires_at", "updated_at")
+    readonly_fields = ("updated_at",)
+
+
 
 @admin.register(User)
 class UserAdmin(DjangoUserAdmin):
+    inlines = [DocumentInline]
     # колонки в списке
     list_display = (
         "username", "full_name", "email", "is_active",
@@ -80,5 +90,19 @@ class UserAdmin(DjangoUserAdmin):
         self.message_user(request, f"Активировано: {updated}")
 
 
+@admin.register(Document)
+class DocumentAdmin(admin.ModelAdmin):
+    list_display = ("title", "kind", "owner", "is_active", "expires_at", "updated_at")
+    fields = ("owner", "kind", "title", "file", "is_active", "expires_at", "updated_at")
+    readonly_fields = ("updated_at",)
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related("owner")
+    # авто-bump при замене файла
+    # def save_model(self, request, obj, form, change):
+    #     if change and "file" in form.changed_data:
+    #         obj.version = (obj.version or 0) + 1
+    #     super().save_model(request, obj, form, change)
+
+
 # по желанию — убираем группы из списка (если не используешь)
-# admin.site.unregister(Group)
+admin.site.unregister(Group)

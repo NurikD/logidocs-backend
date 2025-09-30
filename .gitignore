@@ -23,3 +23,11 @@ env3/
 # IDE
 .idea/
 .vscode/
+
+
+media/
+docs/
+.conf
+.yml
+static/
+dockerfile

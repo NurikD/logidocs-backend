@@ -22,6 +22,4 @@ urlpatterns = [
     path("api/documents/<int:pk>/download/", DocumentDownloadAPI.as_view()),
     path("api/documents/<int:pk>/replace/", DocumentReplaceAPI.as_view()),
     path("api/documents/<int:pk>/delete/", DocumentDeleteAPI.as_view()),
-
-    # admin only
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)  # только для dev
+]

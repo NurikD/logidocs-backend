@@ -13,17 +13,39 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
+from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+STATIC_URL = "/static/"
+STATIC_ROOT = BASE_DIR / "static"   # в контейнере это будет /app/static
+
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
+
+# Если у тебя есть исходники статики вне приложений (например, assets/),
+# тогда добавляй их так, но НЕ указывай тут BASE_DIR/"static":
+# STATICFILES_DIRS = [BASE_DIR / "assets"]
 
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-n7l6k@3u($==k)_0sd4!j_bfkyegjv^e2*cr9t0)p8i()pa@m@'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["kumaryk.su", "www.kumaryk.su"]
+CSFR_TRUSTED_ORIGINS = ["https://kumaryk.su", "https://www.kumaryk.su"]
 
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+# куки только по HTTPS
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+
+# HSTS (включите после проверки HTTPS)
+SECURE_HSTS_SECONDS = 31536000
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
 
 # Application definition
 
@@ -73,12 +95,27 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+import os
+
+if os.getenv("POSTGRES_HOST"):
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": os.getenv("POSTGRES_DB", "postgres"),
+            "USER": os.getenv("POSTGRES_USER", "admin"),
+            "PASSWORD": os.getenv("POSTGRES_PASSWORD", "Tomaza997@"),
+            "HOST": os.getenv("POSTGRES_HOST", "db"),
+            "PORT": os.getenv("POSTGRES_PORT", "5432"),
+        }
     }
-}
+else:
+    # fallback для локальной разработки
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
+    }
 
 
 # Password validation
@@ -142,3 +179,37 @@ SIMPLE_JWT = {
 }
 
 CORS_ALLOW_ALL_ORIGINS = True
+
+
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {"console": {"class": "logging.StreamHandler"}},
+    "loggers": {
+        "django.db.backends": {
+            "handlers": ["console"],
+            "level": "INFO",   # будет логировать SQL и время
+        },
+    },
+}
+# фильтр «медленных» (опционально)
+import logging
+from django.db.backends.signals import connection_created
+from django.dispatch import receiver
+logger = logging.getLogger("django.db.backends")
+
+SLOW_SQL_MS = 200  # порог
+
+@receiver(connection_created)
+def add_execute_wrapper(sender, connection, **kwargs):
+    def wrapper_execute(execute, sql, params, many, context):
+        import time
+        t0 = time.perf_counter()
+        try:
+            return execute(sql, params, many, context)
+        finally:
+            dt = (time.perf_counter() - t0) * 1000
+            if dt >= SLOW_SQL_MS:
+                logger.info("SLOW SQL (%.1f ms): %s", dt, sql[:500])
+    connection.execute_wrapper(wrapper_execute)

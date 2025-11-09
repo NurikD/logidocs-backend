@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}AdminUI{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Tailwind CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+
+</head>
+<body class="bg-gray-100 text-gray-900">
+
+
+<div class="max-w-7xl mx-auto px-6">
+    {% if messages %}
+        <div class="mb-4 space-y-2">
+        {% for m in messages %}
+            <div class="px-4 py-3 rounded text-white
+                {% if m.tags == 'error' %}bg-red-600
+                {% elif m.tags == 'success' %}bg-green-600
+                {% else %}bg-gray-800{% endif %}
+            ">
+                {{ m }}
+            </div>
+        {% endfor %}
+        </div>
+    {% endif %}
+
+    {% block content %}{% endblock %}
+</div>
+
+</body>
+</html>

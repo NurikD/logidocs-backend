@@ -1,0 +1,205 @@
+{% extends "main/base.html" %}
+{% block title %}Профиль{% endblock %}
+{% block content %}
+
+<div class="max-w-7xl mx-auto px-4 py-8">
+
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-10">
+    <div>
+      <h1 class="text-4xl font-bold text-gray-900 flex items-center gap-3">
+        <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg">
+          <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+          </svg>
+        </div>
+        {{ user_obj.username }}
+      </h1>
+      <p class="text-gray-500 mt-2 text-lg">Профиль пользователя</p>
+    </div>
+    <a href="{% url 'adminui:users_list' %}"
+       class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-gray-700 hover:bg-gray-100 transition-all font-medium border border-gray-200 shadow-sm hover:shadow">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+      </svg>
+      Все пользователи
+    </a>
+  </div>
+
+{% if mode == "view" %}
+  <!-- User Info -->
+  <div class="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 rounded-2xl shadow-lg border border-blue-100 p-8 mb-12">
+    <h2 class="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+      <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
+        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+      </div>
+      Основная информация
+    </h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+      <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+        <div class="flex items-center gap-2 mb-2">
+          <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+          </svg>
+          <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Username</div>
+        </div>
+        <div class="text-lg font-bold text-gray-900">{{ user_obj.username }}</div>
+      </div>
+      <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+        <div class="flex items-center gap-2 mb-2">
+          <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+          </svg>
+          <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Email</div>
+        </div>
+        <div class="text-sm font-semibold text-gray-900 break-all">{{ user_obj.email|default:'—' }}</div>
+      </div>
+      <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+        <div class="flex items-center gap-2 mb-2">
+          <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Имя</div>
+        </div>
+        <div class="text-sm font-semibold text-gray-900">{{ user_obj.first_name|default:'—' }}</div>
+      </div>
+      <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+        <div class="flex items-center gap-2 mb-2">
+          <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Фамилия</div>
+        </div>
+        <div class="text-sm font-semibold text-gray-900">{{ user_obj.last_name|default:'—' }}</div>
+      </div>
+    </div>
+  </div>
+{% endif %}
+
+{% if mode == "view" %}
+  <!-- Documents Section -->
+  <div class="mb-8">
+    <h2 class="text-3xl font-bold text-gray-900 flex items-center gap-3 mb-2">
+      <svg class="w-8 h-8 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
+      </svg>
+      Категории документов
+    </h2>
+    <p class="text-gray-500 text-lg">Выберите категорию для просмотра документов</p>
+  </div>
+
+  <!-- Document Folders Grid -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+    <!-- Personal Documents -->
+    <a href="{% url 'adminui:docs_list' user_obj.id 'personal' %}"
+       class="group relative bg-white rounded-2xl shadow-md border-2 border-gray-200 hover:shadow-2xl hover:border-blue-400 hover:-translate-y-2 transition-all duration-300 overflow-hidden">
+
+      <!-- Animated Gradient Background -->
+      <div class="absolute inset-0 bg-gradient-to-br from-blue-400 via-blue-500 to-indigo-600 opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+
+      <!-- Content -->
+      <div class="relative p-8">
+        <div class="flex items-start justify-between mb-6">
+          <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-xl group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
+            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+            </svg>
+          </div>
+          <div class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center group-hover:bg-blue-100 transition-colors">
+            <svg class="w-5 h-5 text-blue-600 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+          </div>
+        </div>
+
+        <h3 class="font-bold text-2xl text-gray-900 mb-3 group-hover:text-blue-700 transition-colors">Личные документы</h3>
+
+        <div class="flex items-center gap-3 mb-4">
+          <span class="inline-flex items-center px-4 py-1.5 rounded-full text-base font-bold bg-blue-100 text-blue-800 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+            {{ docs_personal|length }}
+          </span>
+          <span class="text-sm font-medium text-gray-600">документов</span>
+        </div>
+
+        <p class="text-sm text-gray-500 leading-relaxed">Паспорта, удостоверения личности и другие персональные документы</p>
+      </div>
+    </a>
+
+    <!-- Business Documents -->
+    <a href="{% url 'adminui:docs_list' user_obj.id 'business' %}"
+       class="group relative bg-white rounded-2xl shadow-md border-2 border-gray-200 hover:shadow-2xl hover:border-green-400 hover:-translate-y-2 transition-all duration-300 overflow-hidden">
+
+      <!-- Animated Gradient Background -->
+      <div class="absolute inset-0 bg-gradient-to-br from-green-400 via-green-500 to-emerald-600 opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+
+      <!-- Content -->
+      <div class="relative p-8">
+        <div class="flex items-start justify-between mb-6">
+          <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center shadow-xl group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
+            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+            </svg>
+          </div>
+          <div class="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center group-hover:bg-green-100 transition-colors">
+            <svg class="w-5 h-5 text-green-600 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+          </div>
+        </div>
+
+        <h3 class="font-bold text-2xl text-gray-900 mb-3 group-hover:text-green-700 transition-colors">Разрешения и лицензии</h3>
+
+        <div class="flex items-center gap-3 mb-4">
+          <span class="inline-flex items-center px-4 py-1.5 rounded-full text-base font-bold bg-green-100 text-green-800 group-hover:bg-green-600 group-hover:text-white transition-colors">
+            {{ docs_business|length }}
+          </span>
+          <span class="text-sm font-medium text-gray-600">документов</span>
+        </div>
+
+        <p class="text-sm text-gray-500 leading-relaxed">Бизнес-лицензии, сертификаты и официальные разрешения</p>
+      </div>
+    </a>
+
+    <!-- Dozvol Documents -->
+    <a href="{% url 'adminui:docs_list' user_obj.id 'dozvol' %}"
+       class="group relative bg-white rounded-2xl shadow-md border-2 border-gray-200 hover:shadow-2xl hover:border-purple-400 hover:-translate-y-2 transition-all duration-300 overflow-hidden">
+
+      <!-- Animated Gradient Background -->
+      <div class="absolute inset-0 bg-gradient-to-br from-purple-400 via-purple-500 to-indigo-600 opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+
+      <!-- Content -->
+      <div class="relative p-8">
+        <div class="flex items-start justify-between mb-6">
+          <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-xl group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
+            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+          </div>
+          <div class="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center group-hover:bg-purple-100 transition-colors">
+            <svg class="w-5 h-5 text-purple-600 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+          </div>
+        </div>
+
+        <h3 class="font-bold text-2xl text-gray-900 mb-3 group-hover:text-purple-700 transition-colors">Дозвол</h3>
+
+        <div class="flex items-center gap-3 mb-4">
+          <span class="inline-flex items-center px-4 py-1.5 rounded-full text-base font-bold bg-purple-100 text-purple-800 group-hover:bg-purple-600 group-hover:text-white transition-colors">
+            {{ docs_dozvol|length }}
+          </span>
+          <span class="text-sm font-medium text-gray-600">документов</span>
+        </div>
+
+        <p class="text-sm text-gray-500 leading-relaxed">Специальные разрешения и документы особого назначения</p>
+      </div>
+    </a>
+
+  </div>
+{% endif %}
+</div>
+
+{% endblock %}

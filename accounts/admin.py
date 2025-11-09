@@ -4,14 +4,14 @@ from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 from django.contrib.auth.models import Group
 from django.utils.crypto import get_random_string
 from django.utils.html import format_html
-from .models import Document, User
-from .models import User
+from .models import Document, User, DocumentFile
+
 
 # accounts/admin.py (фрагменты)
 class DocumentInline(admin.StackedInline):
     model = Document
     extra = 1
-    fields = ("title", "kind", "file", "is_active", "expires_at", "updated_at")
+    fields = ("title", "kind", "is_active", "expires_at", "updated_at")
     readonly_fields = ("updated_at",)
 
 
@@ -19,7 +19,7 @@ class DocumentInline(admin.StackedInline):
 @admin.register(User)
 class UserAdmin(DjangoUserAdmin):
     inlines = [DocumentInline]
-    # колонки в списке
+
     list_display = (
         "username", "full_name", "email", "is_active",
         "is_staff", "last_login", "must_change_pw_badge",
@@ -89,20 +89,18 @@ class UserAdmin(DjangoUserAdmin):
         updated = queryset.update(is_active=True)
         self.message_user(request, f"Активировано: {updated}")
 
+class DocumentFileInline(admin.TabularInline):
+    model = DocumentFile
+    extra = 1
+    fields = ("file", "uploaded_at")
+    readonly_fields = ("uploaded_at",)
 
 @admin.register(Document)
 class DocumentAdmin(admin.ModelAdmin):
     list_display = ("title", "kind", "owner", "is_active", "expires_at", "updated_at")
-    fields = ("owner", "kind", "title", "file", "is_active", "expires_at", "updated_at")
+    fields = ("owner", "kind", "title", "is_active", "expires_at", "updated_at")
     readonly_fields = ("updated_at",)
-    def get_queryset(self, request):
-        return super().get_queryset(request).select_related("owner")
-    # авто-bump при замене файла
-    # def save_model(self, request, obj, form, change):
-    #     if change and "file" in form.changed_data:
-    #         obj.version = (obj.version or 0) + 1
-    #     super().save_model(request, obj, form, change)
+    inlines = [DocumentFileInline]
 
 
-# по желанию — убираем группы из списка (если не используешь)
 admin.site.unregister(Group)

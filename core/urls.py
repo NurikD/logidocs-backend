@@ -1,0 +1,31 @@
+from django import views
+from django.conf import settings
+from django.conf.urls.static import static
+from django.urls import path, include
+from django.contrib import admin
+from accounts.views import LoginView, DocumentFileDownloadAPI # твой TokenObtainPairView кастомный
+
+from accounts.views import (
+    LoginView, ChangePasswordView,
+    DocumentListAPI, DocumentDetailAPI,
+    DocumentReplaceAPI, DocumentDeleteAPI,
+)
+
+urlpatterns = [
+    path("admin/", admin.site.urls),
+
+    # auth
+    path("api/auth/token/", LoginView.as_view()),
+    path("api/auth/change-password/", ChangePasswordView.as_view()),
+
+    path("api/documents/", DocumentListAPI.as_view()),
+    path("api/documents/<int:pk>/", DocumentDetailAPI.as_view()),
+    # Новый URL для скачивания конкретного файла
+    path("api/documents/<int:pk>/replace/", DocumentReplaceAPI.as_view()),
+    path("api/documents/<int:pk>/delete/", DocumentDeleteAPI.as_view()),
+    path("api/documents/<int:pk>/download/<int:file_pk>/", DocumentFileDownloadAPI.as_view()),
+    path("admin-ui/", include("adminui.urls", namespace="adminui")),
+
+
+    # admin only
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)  # только для dev

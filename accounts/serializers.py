@@ -1,10 +1,9 @@
 from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
-from django.contrib.auth import authenticate
-from .models import User
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from rest_framework import serializers
-from .models import Document
+
+from .models import User, Document, DocumentFile
+
 
 class LoginSerializer(TokenObtainPairSerializer):
     @classmethod
@@ -16,10 +15,10 @@ class LoginSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         data = super().validate(attrs)
         user = self.user
-        # можно вернуть для админ-UI, но фронт его игнорирует
         data["must_change_pw"] = user.must_change_pw
         data["username"] = user.username
         return data
+
 
 class ChangePasswordSerializer(serializers.Serializer):
     old_password = serializers.CharField()
@@ -31,26 +30,28 @@ class ChangePasswordSerializer(serializers.Serializer):
             raise serializers.ValidationError("Пароль слишком короткий (>=10).")
         return value
 
-class DocumentSerializer(serializers.ModelSerializer):
+
+class DocumentFileSerializer(serializers.ModelSerializer):
     file_name = serializers.SerializerMethodField()
     content_type = serializers.SerializerMethodField()
     size = serializers.SerializerMethodField()
+
+    class Meta:
+        model = DocumentFile
+        fields = ["id", "file_name", "content_type", "size", "uploaded_at"]
+
+    def get_file_name(self, obj): return obj.filename
+    def get_content_type(self, obj): return obj.content_type
+    def get_size(self, obj): return obj.file.size if obj.file else None
+
+
+class DocumentSerializer(serializers.ModelSerializer):
+    files = DocumentFileSerializer(many=True, read_only=True)
     owner_id = serializers.IntegerField(source="owner.id", read_only=True)
-    file_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Document
         fields = [
-            "id","title","kind", "is_active","expires_at",
-            "file_name","content_type","size","owner_id","file_url",
+            "id", "title", "kind", "is_active", "expires_at",
+            "updated_at", "owner_id", "files", "is_expired"
         ]
-
-    def get_file_name(self, obj): return obj.filename
-    def get_content_type(self, obj): return obj.content_type
-    def get_size(self, obj):
-        try: return obj.file.size if obj.file else None
-        except Exception: return None
-    def get_file_url(self, obj):
-        req = self.context.get("request")
-        if not (req and obj.file): return None
-        return req.build_absolute_uri(f"/api/documents/{obj.pk}/download/")

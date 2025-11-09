@@ -22,15 +22,32 @@ def users_list(request):
 
     if q:
         qs = qs.filter(username__icontains=q) | qs.filter(first_name__icontains=q) | qs.filter(last_name__icontains=q) | qs.filter(email__icontains=q)
-        users = qs.order_by("-date_joined")
+
+    # считаем ТОЛАЛЬНОЕ количество (до среза)
+    users_total_count = qs.count()
+
+    # теперь применяем срез только для отображения первых 9
+    if not q:
+        qs = qs.order_by("-date_joined")[:9]
     else:
-        users = qs.order_by("-date_joined")[:6]
+        qs = qs.order_by("-date_joined")
+
+    users = qs
 
     # если это вызов через HTMX — отдаём только grid
     if request.headers.get("HX-Request"):
         return render(request, "adminui/_users_grid.html", {"users": users})
 
-    return render(request, "adminui/users_list.html", {"users": users, "q": q})
+    return render(
+        request,
+        "adminui/users_list.html",
+        {
+            "users": users,
+            "q": q,
+            "users_total_count": users_total_count,
+        }
+    )
+
 
 @staff_member_required
 @transaction.atomic

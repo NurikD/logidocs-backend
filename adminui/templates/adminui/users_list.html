@@ -2,32 +2,34 @@
 {% block title %}Пользователи — AdminUI{% endblock %}
 {% block content %}
 
-<div class="max-w-7xl mx-auto px-4 py-8">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
 
   <!-- Header -->
-  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-10">
-    <div class="flex items-center gap-4">
-      <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg">
-        <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  <div class="flex flex-col gap-4 mb-8 sm:mb-10">
+    <!-- Title Section -->
+    <div class="flex items-start gap-3 sm:gap-4">
+      <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg flex-shrink-0">
+        <svg class="w-6 h-6 sm:w-7 sm:h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
         </svg>
       </div>
-      <div>
-        <h1 class="text-4xl font-bold text-gray-900 flex items-center gap-3">
+      <div class="flex-1 min-w-0">
+        <h1 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 flex flex-wrap items-center gap-2 sm:gap-3">
           Пользователи
-          <span class="inline-flex items-center px-3 py-1 rounded-full text-lg font-semibold bg-blue-100 text-blue-800">
-            {{ users|length }}
+          <span class="inline-flex items-center px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full text-sm sm:text-base lg:text-lg font-semibold bg-blue-100 text-blue-800">
+            {{ users_total_count }}
           </span>
         </h1>
-        <p class="text-gray-500 mt-1 text-lg">Управление пользователями системы</p>
+        <p class="text-gray-500 mt-1 text-sm sm:text-base lg:text-lg">Управление пользователями системы</p>
       </div>
     </div>
 
+    <!-- Actions Section -->
     <div class="flex flex-col sm:flex-row gap-3">
       <!-- Search Input -->
-      <div class="relative">
-        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-          <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div class="relative flex-1 sm:max-w-xs lg:max-w-sm">
+        <div class="absolute inset-y-0 left-0 pl-3 sm:pl-4 flex items-center pointer-events-none">
+          <svg class="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
           </svg>
         </div>
@@ -35,8 +37,8 @@
           id="search-input"
           name="q"
           value="{{ q|default:'' }}"
-          placeholder="Поиск пользователей..."
-          class="pl-11 pr-4 py-3 rounded-xl border-2 border-gray-300 w-full sm:w-64 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-sm hover:border-gray-400"
+          placeholder="Поиск..."
+          class="pl-10 sm:pl-11 pr-4 py-2.5 sm:py-3 rounded-xl border-2 border-gray-300 w-full text-sm sm:text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-sm hover:border-gray-400"
           hx-get="{% url 'adminui:users_list' %}"
           hx-target="#users-grid"
           hx-trigger="keyup changed delay:250ms"
@@ -47,11 +49,12 @@
 
       <!-- Create User Button -->
       <a href="{% url 'adminui:user_create' %}"
-         class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5 whitespace-nowrap">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+         class="inline-flex items-center justify-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm sm:text-base font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5 whitespace-nowrap">
+        <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
         </svg>
-        Создать пользователя
+        <span class="hidden xs:inline">Создать пользователя</span>
+        <span class="xs:hidden">Создать</span>
       </a>
     </div>
   </div>

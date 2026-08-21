@@ -9,6 +9,7 @@ from accounts.views import (
     LoginView, ChangePasswordView,
     DocumentListAPI, DocumentDetailAPI,
     DocumentReplaceAPI, DocumentDeleteAPI,
+    set_password_view,
 )
 
 urlpatterns = [
@@ -26,6 +27,7 @@ urlpatterns = [
     path("api/documents/<int:pk>/download/<int:file_pk>/", DocumentFileDownloadAPI.as_view()),
     path("admin-ui/", include("adminui.urls", namespace="adminui")),
 
+    path("set-password/<str:token>/", set_password_view, name="set_password"),
 
     # admin only
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)  # только для dev

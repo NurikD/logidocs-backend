@@ -4,6 +4,7 @@ import mimetypes
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 
@@ -13,6 +14,21 @@ class User(AbstractUser):
 
     def __str__(self) -> str:
         return self.get_username()
+
+
+class InviteToken(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    token = models.CharField(max_length=64, unique=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    used_at = models.DateTimeField(null=True, blank=True)
+
+    @property
+    def is_valid(self) -> bool:
+        return self.used_at is None and self.expires_at > timezone.now()
+
+    def __str__(self) -> str:
+        return f"{self.user.username} ({'использован' if self.used_at else 'активен'})"
 
 
 def doc_upload_to(instance: "DocumentFile", filename: str) -> str:

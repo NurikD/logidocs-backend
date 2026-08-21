@@ -7,6 +7,7 @@ urlpatterns = [
     path("users/", views.users_list, name="users_list"),
     path("users/create/", views.user_create, name="user_create"),
     path("users/<int:user_id>/", views.user_detail, name="user_detail"),
+    path("users/<int:user_id>/password-link/", views.password_reset_link, name="password_reset_link"),
 
     # documents CRUD
     path("users/<int:user_id>/documents/create/", views.document_create, name="document_create"),

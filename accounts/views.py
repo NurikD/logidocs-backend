@@ -8,7 +8,7 @@ from django.contrib.auth.hashers import check_password
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.http import FileResponse, Http404
 
-from .models import User, Document, DocumentFile
+from .models import User, Document, DocumentFile, InviteToken
 from .serializers import LoginSerializer, ChangePasswordSerializer, DocumentSerializer
 
 from .forms import SetPasswordFormWithoutOldPassword
@@ -113,6 +113,29 @@ class DocumentDeleteAPI(APIView):
         doc = get_object_or_404(Document, pk=pk)
         doc.delete()
         return Response({"ok": True})
+
+
+def set_password_view(request, token):
+    invite = get_object_or_404(InviteToken.objects.select_related("user"), token=token)
+
+    if not invite.is_valid:
+        return render(request, "accounts/set_password.html", {"invalid": True})
+
+    if request.method == "POST":
+        form = SetPasswordFormWithoutOldPassword(request.POST)
+        if form.is_valid():
+            user = invite.user
+            user.set_password(form.cleaned_data["password"])
+            user.is_active = True
+            user.must_change_pw = False
+            user.save(update_fields=["password", "is_active", "must_change_pw"])
+            invite.used_at = timezone.now()
+            invite.save(update_fields=["used_at"])
+            return render(request, "accounts/set_password.html", {"success": True, "username": user.username})
+    else:
+        form = SetPasswordFormWithoutOldPassword()
+
+    return render(request, "accounts/set_password.html", {"form": form, "invite": invite})
 
 
 

@@ -1,18 +1,32 @@
 # adminui/views.py
+import secrets
+from datetime import timedelta
+
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.admin.views.decorators import staff_member_required
 from django.db import transaction
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
-from django.utils.crypto import get_random_string
+from django.urls import reverse
+from django.utils import timezone
 
-from accounts.models import Document, DocumentFile  # твои модели
+from accounts.models import Document, DocumentFile, InviteToken  # твои модели
 from .forms import UserCreateForm, DocumentForm, DocumentFilesForm
-from django.contrib.auth.hashers import make_password
-from django.contrib.auth import login
 
 User = get_user_model()
+
+INVITE_TTL = timedelta(days=3)
+
+
+def _create_invite_link(request, user):
+    InviteToken.objects.filter(user=user, used_at__isnull=True).update(used_at=timezone.now())
+    invite = InviteToken.objects.create(
+        user=user,
+        token=secrets.token_urlsafe(32),
+        expires_at=timezone.now() + INVITE_TTL,
+    )
+    return request.build_absolute_uri(reverse("set_password", args=[invite.token]))
 
 @staff_member_required
 def users_list(request):
@@ -60,7 +74,6 @@ def user_create(request):
             if User.objects.filter(username=cd["username"]).exists():
                 form.add_error("username", "Логин уже существует")
             else:
-                temp = get_random_string(12)
                 u = User(
                     username=cd["username"],
                     first_name=cd.get("first_name",""),
@@ -69,12 +82,11 @@ def user_create(request):
                     is_staff=cd.get("is_staff", True),
                     is_active=cd.get("is_active", True),
                 )
-                if hasattr(u, "must_change_pw"):
-                    u.must_change_pw = True
-                u.set_password(temp)
+                u.set_unusable_password()
                 u.save()
 
-                messages.success(request, f"Пользователь создан. Временный пароль:\n\n{u.username}: {temp}")
+                link = _create_invite_link(request, u)
+                messages.success(request, f"Пользователь создан. Отправьте клиенту ссылку для установки пароля (действует 3 дня):\n{link}")
                 return redirect("adminui:user_detail", user_id=u.id)
 
     else:
@@ -268,4 +280,14 @@ def document_view(request, user_id, doc_id):
         "document": doc,
         "files": files,
     })
+
+
+@staff_member_required
+def password_reset_link(request, user_id: int):
+    user_obj = get_object_or_404(User, pk=user_id)
+    if request.method != "POST":
+        raise Http404
+    link = _create_invite_link(request, user_obj)
+    messages.success(request, f"Ссылка для установки пароля (действует 3 дня):\n{link}")
+    return redirect("adminui:user_detail", user_id=user_id)
 

@@ -6,7 +6,7 @@ from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.admin.views.decorators import staff_member_required
 from django.db import transaction
-from django.http import Http404
+from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -290,4 +290,17 @@ def password_reset_link(request, user_id: int):
     link = _create_invite_link(request, user_obj)
     messages.success(request, f"Ссылка для установки пароля (действует 3 дня):\n{link}")
     return redirect("adminui:user_detail", user_id=user_id)
+
+
+@staff_member_required
+def document_file_serve(request, user_id: int, doc_id: int, file_id: int):
+    user_obj = get_object_or_404(User, pk=user_id)
+    doc = get_object_or_404(Document, pk=doc_id, owner=user_obj)
+    file_obj = get_object_or_404(doc.files, pk=file_id)
+    return FileResponse(
+        file_obj.file.open("rb"),
+        as_attachment=False,
+        filename=file_obj.filename,
+        content_type=file_obj.content_type,
+    )
 

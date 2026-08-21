@@ -15,6 +15,7 @@ urlpatterns = [
     path("users/<int:user_id>/documents/<int:doc_id>/delete/", views.document_delete, name="document_delete"),
     path("users/<int:user_id>/documents/<int:doc_id>/files/add/", views.document_files_add, name="document_files_add"),
     path("users/<int:user_id>/documents/<int:doc_id>/files/<int:file_id>/delete/", views.document_file_delete, name="document_file_delete"),
+    path("users/<int:user_id>/documents/<int:doc_id>/files/<int:file_id>/view/", views.document_file_serve, name="document_file_serve"),
     path("users/<int:user_id>/documents/<int:doc_id>/view/", views.document_view, name="document_view"),
 
 

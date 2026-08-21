@@ -41,12 +41,12 @@
       {% for f in files %}
         {% if f.is_image %}
           <!-- Image File -->
-          <a href="{{ f.object.file.url }}" target="_blank"
+          <a href="{% url 'adminui:document_file_serve' user_obj.id document.id f.object.id %}" target="_blank"
              class="group relative bg-white rounded-2xl border-2 border-gray-200 overflow-hidden hover:border-blue-400 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
 
             <!-- Image Preview -->
             <div class="aspect-square overflow-hidden bg-gray-100">
-              <img src="{{ f.object.file.url }}"
+              <img src="{% url 'adminui:document_file_serve' user_obj.id document.id f.object.id %}"
                    class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                    alt="{{ f.object.filename }}" />
             </div>
@@ -72,7 +72,7 @@
 
         {% else %}
           <!-- Document File -->
-          <a href="{{ f.object.file.url }}" target="_blank"
+          <a href="{% url 'adminui:document_file_serve' user_obj.id document.id f.object.id %}" target="_blank"
              class="group flex flex-col items-center justify-center p-6 bg-white rounded-2xl border-2 border-gray-200 hover:border-blue-400 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 min-h-[200px]">
 
             <!-- File Icon -->

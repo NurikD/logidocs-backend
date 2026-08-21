@@ -28,6 +28,9 @@ urlpatterns = [
     path("admin-ui/", include("adminui.urls", namespace="adminui")),
 
     path("set-password/<str:token>/", set_password_view, name="set_password"),
+]
 
-    # admin only
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)  # только для dev
+# Медиа отдаём напрямую только в dev — в проде файлы должны идти через
+# авторизованные вьюхи (DocumentFileDownloadAPI / adminui.document_file_serve).
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

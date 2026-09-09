@@ -1,6 +1,6 @@
 # adminui/views.py
 import secrets
-from datetime import timedelta
+from datetime import date, timedelta
 
 from django.contrib import messages
 from django.contrib.auth import get_user_model
@@ -12,7 +12,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 
-from accounts.models import Document, DocumentFile, InviteToken, Vehicle  # твои модели
+from accounts.models import Document, DocumentFile, InviteToken, Vehicle, add_months  # твои модели
 from .forms import UserCreateForm, DocumentForm, DocumentFilesForm
 
 User = get_user_model()
@@ -220,11 +220,30 @@ def _docs_by_kind(request, user_id:int, kind:str, title_ru:str, vehicle_id=None)
     if request.method == "POST":
         # создание документа
         title = request.POST.get("title","").strip()
-        expires_at = request.POST.get("expires_at") or None
         files = request.FILES.getlist("files")
 
+        error = None
+        issued_at = None
+        expires_at = None
+
         if not title:
-            messages.error(request, "Название обязательно")
+            error = "Название обязательно"
+        elif kind == Document.Kind.BUSINESS:
+            issued_raw = request.POST.get("issued_at") or None
+            if not issued_raw:
+                error = "Укажите дату оформления"
+            else:
+                try:
+                    issued_at = date.fromisoformat(issued_raw)
+                except ValueError:
+                    error = "Некорректная дата оформления"
+                else:
+                    expires_at = add_months(issued_at, 2)
+        else:
+            expires_at = request.POST.get("expires_at") or None
+
+        if error:
+            messages.error(request, error)
         else:
             with transaction.atomic():
                 d = Document.objects.create(
@@ -232,7 +251,8 @@ def _docs_by_kind(request, user_id:int, kind:str, title_ru:str, vehicle_id=None)
                     vehicle=vehicle_obj,
                     kind=kind,
                     title=title,
-                    expires_at=expires_at
+                    issued_at=issued_at,
+                    expires_at=expires_at,
                 )
                 for f in files:
                     DocumentFile.objects.create(document=d, file=f)
@@ -418,4 +438,3 @@ def document_file_serve(request, user_id: int, doc_id: int, file_id: int, vehicl
         filename=file_obj.filename,
         content_type=file_obj.content_type,
     )
-

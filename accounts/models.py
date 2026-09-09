@@ -1,4 +1,5 @@
-from datetime import date
+from datetime import date, timedelta
+import calendar
 import mimetypes
 
 from django.conf import settings
@@ -46,6 +47,18 @@ class Vehicle(models.Model):
         return self.plate
 
 
+def add_months(d: date, months: int) -> date:
+    """Календарное прибавление месяцев с клампом дня (31 янв + 2 = 31 мар)."""
+    month_index = d.month - 1 + months
+    year = d.year + month_index // 12
+    month = month_index % 12 + 1
+    day = min(d.day, calendar.monthrange(year, month)[1])
+    return date(year, month, day)
+
+
+DOCUMENT_EXPIRY_WARNING_DAYS = 7
+
+
 def doc_upload_to(instance: "DocumentFile", filename: str) -> str:
     doc = instance.document
     oid = doc.owner_id or "unknown"
@@ -69,8 +82,18 @@ class Document(models.Model):
         db_index=True
     )
     is_active = models.BooleanField(default=True, db_index=True)
+    # Дата оформления — вводит админ (сейчас актуально для kind=business);
+    # expires_at считается от неё автоматически (+2 месяца), см. add_months().
+    issued_at = models.DateField(null=True, blank=True)
     expires_at = models.DateField(null=True, blank=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True, db_index=True)
+
+    # Клиент нажал "Понятно" на уведомлении об истечении — больше не напоминаем
+    # именно по этому документу (диспетчер всё равно продолжает получать свой дайджест).
+    notification_dismissed = models.BooleanField(default=False)
+    # Дата последней отправки push по этому документу — чтобы ежедневная
+    # команда не слала повторно, если её запустят дважды за день.
+    last_notified_date = models.DateField(null=True, blank=True)
 
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -95,6 +118,12 @@ class Document(models.Model):
     @property
     def is_expired(self) -> bool:
         return bool(self.expires_at and self.expires_at < date.today())
+
+    @property
+    def is_expiring_soon(self) -> bool:
+        if not self.expires_at or self.is_expired:
+            return False
+        return self.expires_at <= date.today() + timedelta(days=DOCUMENT_EXPIRY_WARNING_DAYS)
 
     def __str__(self) -> str:
         return self.title
@@ -126,3 +155,21 @@ class DocumentFile(models.Model):
 
     def __str__(self) -> str:
         return self.filename
+
+
+class DeviceToken(models.Model):
+    """FCM-токен устройства для push-уведомлений."""
+
+    class Platform(models.TextChoices):
+        ANDROID = "android", "Android"
+        IOS = "ios", "iOS"
+        WEB = "web", "Web"
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="devices")
+    token = models.CharField(max_length=255, unique=True, db_index=True)
+    platform = models.CharField(max_length=16, choices=Platform.choices)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self) -> str:
+        return f"{self.user.username} ({self.platform})"

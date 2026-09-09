@@ -9,7 +9,7 @@ from accounts.views import (
     LoginView, ChangePasswordView,
     DocumentListAPI, DocumentDetailAPI,
     DocumentReplaceAPI, DocumentDeleteAPI,
-    VehicleListAPI,
+    VehicleListAPI, DeviceRegisterAPI,
     set_password_view,
 )
 
@@ -21,6 +21,7 @@ urlpatterns = [
     path("api/auth/change-password/", ChangePasswordView.as_view()),
 
     path("api/vehicles/", VehicleListAPI.as_view()),
+    path("api/devices/register/", DeviceRegisterAPI.as_view()),
     path("api/documents/", DocumentListAPI.as_view()),
     path("api/documents/<int:pk>/", DocumentDetailAPI.as_view()),
     # Новый URL для скачивания конкретного файла

@@ -9,8 +9,11 @@ from django.db.models import Count
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.http import FileResponse, Http404
 
-from .models import User, Document, DocumentFile, InviteToken, Vehicle
-from .serializers import LoginSerializer, ChangePasswordSerializer, DocumentSerializer, VehicleSerializer
+from .models import User, Document, DocumentFile, InviteToken, Vehicle, DeviceToken
+from .serializers import (
+    LoginSerializer, ChangePasswordSerializer, DocumentSerializer, VehicleSerializer,
+    DeviceTokenSerializer,
+)
 
 from .forms import SetPasswordFormWithoutOldPassword
 from django.utils import timezone
@@ -132,6 +135,20 @@ class DocumentDeleteAPI(APIView):
     def delete(self, request, pk):
         doc = get_object_or_404(Document, pk=pk)
         doc.delete()
+        return Response({"ok": True})
+
+
+class DeviceRegisterAPI(APIView):
+    """Регистрация FCM-токена устройства за текущим пользователем."""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        s = DeviceTokenSerializer(data=request.data)
+        s.is_valid(raise_exception=True)
+        DeviceToken.objects.update_or_create(
+            token=s.validated_data["token"],
+            defaults={"user": request.user, "platform": s.validated_data["platform"]},
+        )
         return Response({"ok": True})
 
 

@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
-from .models import User, Document, DocumentFile, Vehicle
+from .models import User, Document, DocumentFile, Vehicle, DeviceToken
 
 
 class LoginSerializer(TokenObtainPairSerializer):
@@ -74,3 +74,9 @@ class DocumentSerializer(serializers.ModelSerializer):
             "updated_at", "owner_id", "vehicle_id", "vehicle_plate", "files",
             "is_expired", "is_expiring_soon", "notification_dismissed",
         ]
+
+
+class DeviceTokenSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DeviceToken
+        fields = ["token", "platform"]

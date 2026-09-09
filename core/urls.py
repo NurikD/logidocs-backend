@@ -10,7 +10,7 @@ from accounts.views import (
     DocumentListAPI, DocumentDetailAPI,
     DocumentReplaceAPI, DocumentDeleteAPI,
     VehicleListAPI, DeviceRegisterAPI,
-    DocumentDismissNotificationAPI,
+    DocumentDismissNotificationAPI, DocumentExpiringListAPI,
     set_password_view,
 )
 
@@ -23,6 +23,7 @@ urlpatterns = [
 
     path("api/vehicles/", VehicleListAPI.as_view()),
     path("api/devices/register/", DeviceRegisterAPI.as_view()),
+    path("api/documents/expiring/", DocumentExpiringListAPI.as_view()),
     path("api/documents/", DocumentListAPI.as_view()),
     path("api/documents/<int:pk>/dismiss-notification/", DocumentDismissNotificationAPI.as_view()),
     path("api/documents/<int:pk>/", DocumentDetailAPI.as_view()),

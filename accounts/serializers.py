@@ -80,3 +80,23 @@ class DeviceTokenSerializer(serializers.ModelSerializer):
     class Meta:
         model = DeviceToken
         fields = ["token", "platform"]
+
+
+class ExpiringDocumentSerializer(serializers.ModelSerializer):
+    """Для экрана диспетчера: чья путёвка, по какой машине и как с человеком связаться."""
+    owner_username = serializers.CharField(source="owner.username", read_only=True)
+    owner_name = serializers.SerializerMethodField()
+    owner_phone = serializers.CharField(source="owner.phone", read_only=True, default="")
+    vehicle_plate = serializers.CharField(source="vehicle.plate", read_only=True, default=None)
+
+    class Meta:
+        model = Document
+        fields = [
+            "id", "title", "expires_at", "is_expired", "is_expiring_soon",
+            "owner_id", "owner_username", "owner_name", "owner_phone", "vehicle_plate",
+        ]
+
+    def get_owner_name(self, obj):
+        if not obj.owner:
+            return ""
+        return f"{obj.owner.last_name} {obj.owner.first_name}".strip()

@@ -1,4 +1,4 @@
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.permissions import IsAuthenticated, IsAdminUser, BasePermission
 from rest_framework.response import Response
 from rest_framework.generics import ListAPIView, RetrieveAPIView, get_object_or_404
 from rest_framework.views import APIView
@@ -12,7 +12,7 @@ from django.http import FileResponse, Http404
 from .models import User, Document, DocumentFile, InviteToken, Vehicle, DeviceToken
 from .serializers import (
     LoginSerializer, ChangePasswordSerializer, DocumentSerializer, VehicleSerializer,
-    DeviceTokenSerializer,
+    DeviceTokenSerializer, ExpiringDocumentSerializer,
 )
 
 from .forms import SetPasswordFormWithoutOldPassword
@@ -164,6 +164,24 @@ class DocumentDismissNotificationAPI(APIView):
         doc.notification_dismissed = True
         doc.save(update_fields=["notification_dismissed"])
         return Response({"ok": True})
+
+
+class IsSuperUser(BasePermission):
+    def has_permission(self, request, view):
+        return bool(request.user and request.user.is_authenticated and request.user.is_superuser)
+
+
+class DocumentExpiringListAPI(ListAPIView):
+    """Экран диспетчера: путёвки всех клиентов, которые скоро истекут или истекли."""
+    serializer_class = ExpiringDocumentSerializer
+    permission_classes = [IsSuperUser]
+
+    def get_queryset(self):
+        qs = (Document.objects
+              .filter(kind=Document.Kind.BUSINESS, expires_at__isnull=False)
+              .select_related("owner", "vehicle")
+              .order_by("expires_at"))
+        return [d for d in qs if d.is_expired or d.is_expiring_soon]
 
 
 def set_password_view(request, token):

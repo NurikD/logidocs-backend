@@ -42,7 +42,11 @@ class DocumentFileSerializer(serializers.ModelSerializer):
 
     def get_file_name(self, obj): return obj.filename
     def get_content_type(self, obj): return obj.content_type
-    def get_size(self, obj): return obj.file.size if obj.file else None
+    def get_size(self, obj):
+        try:
+            return obj.file.size if obj.file else None
+        except Exception:
+            return None
 
 
 class DocumentSerializer(serializers.ModelSerializer):

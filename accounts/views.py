@@ -5,11 +5,12 @@ from rest_framework.views import APIView
 from rest_framework import status
 
 from django.contrib.auth.hashers import check_password
+from django.db.models import Count
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.http import FileResponse, Http404
 
-from .models import User, Document, DocumentFile, InviteToken
-from .serializers import LoginSerializer, ChangePasswordSerializer, DocumentSerializer
+from .models import User, Document, DocumentFile, InviteToken, Vehicle
+from .serializers import LoginSerializer, ChangePasswordSerializer, DocumentSerializer, VehicleSerializer
 
 from .forms import SetPasswordFormWithoutOldPassword
 from django.utils import timezone
@@ -37,7 +38,19 @@ class ChangePasswordView(APIView):
 
 
 def qs_with_owner():
-    return Document.objects.select_related("owner").prefetch_related("files")
+    return Document.objects.select_related("owner", "vehicle").prefetch_related("files")
+
+
+class VehicleListAPI(ListAPIView):
+    """Автомобили текущего пользователя. Пустой список — клиент с одной машиной,
+    документы приходят прямо в /api/documents/ без папок."""
+    serializer_class = VehicleSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        u = self.request.user
+        qs = Vehicle.objects.all() if u.is_superuser else Vehicle.objects.filter(owner=u)
+        return qs.annotate(documents_count=Count("documents")).order_by("plate")
 
 
 class DocumentListAPI(ListAPIView):
@@ -46,7 +59,14 @@ class DocumentListAPI(ListAPIView):
 
     def get_queryset(self):
         u = self.request.user
-        return qs_with_owner().order_by("title") if u.is_superuser else qs_with_owner().filter(owner=u).order_by("title")
+        qs = qs_with_owner().order_by("title") if u.is_superuser else qs_with_owner().filter(owner=u).order_by("title")
+
+        vehicle_param = self.request.query_params.get("vehicle")
+        if vehicle_param == "none":
+            qs = qs.filter(vehicle__isnull=True)
+        elif vehicle_param:
+            qs = qs.filter(vehicle_id=vehicle_param)
+        return qs
 
 
 class DocumentDetailAPI(RetrieveAPIView):

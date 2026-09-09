@@ -438,3 +438,22 @@ def document_file_serve(request, user_id: int, doc_id: int, file_id: int, vehicl
         filename=file_obj.filename,
         content_type=file_obj.content_type,
     )
+
+
+@staff_member_required
+def expiring_documents(request):
+    """Путёвки, которые скоро истекут или уже истекли — по всем клиентам."""
+    qs = (Document.objects
+          .filter(kind=Document.Kind.BUSINESS, expires_at__isnull=False)
+          .select_related("owner", "vehicle")
+          .order_by("expires_at"))
+    at_risk = [d for d in qs if d.is_expired or d.is_expiring_soon]
+
+    for d in at_risk:
+        if d.vehicle_id:
+            d.profile_url = reverse("adminui:vehicle_detail", args=[d.owner_id, d.vehicle_id])
+        else:
+            d.profile_url = reverse("adminui:user_detail", args=[d.owner_id])
+
+    return render(request, "adminui/expiring_documents.html", {"documents": at_risk})
+

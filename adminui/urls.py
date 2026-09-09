@@ -4,6 +4,7 @@ from . import views
 app_name = "adminui"
 
 urlpatterns = [
+    path("expiring/", views.expiring_documents, name="expiring_documents"),
     path("users/", views.users_list, name="users_list"),
     path("users/create/", views.user_create, name="user_create"),
     path("users/<int:user_id>/", views.user_detail, name="user_detail"),

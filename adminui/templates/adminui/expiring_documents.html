@@ -1,0 +1,53 @@
+{% extends "main/base.html" %}
+{% block title %}Истекающие путёвки{% endblock %}
+{% block content %}
+
+<div class="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
+
+  <div class="flex items-start gap-3 sm:gap-4 mb-8">
+    <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center shadow-lg flex-shrink-0">
+      <svg class="w-6 h-6 sm:w-7 sm:h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/>
+      </svg>
+    </div>
+    <div>
+      <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center gap-3">
+        Истекающие путёвки
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-semibold bg-red-100 text-red-800">{{ documents|length }}</span>
+      </h1>
+      <p class="text-gray-500 mt-1">Путёвки, у которых до конца срока ≤ 7 дней, или уже просроченные</p>
+    </div>
+  </div>
+
+  {% if documents %}
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 divide-y divide-gray-100 overflow-hidden">
+      {% for d in documents %}
+        <a href="{{ d.profile_url }}" class="flex items-center justify-between gap-4 px-5 py-4 hover:bg-gray-50 transition-colors">
+          <div class="min-w-0">
+            <div class="font-semibold text-gray-900 truncate">{{ d.owner.username }}{% if d.owner.first_name or d.owner.last_name %} — {{ d.owner.last_name }} {{ d.owner.first_name }}{% endif %}</div>
+            <div class="text-sm text-gray-500 truncate">
+              {{ d.title }}
+              {% if d.vehicle %}· авто {{ d.vehicle.plate }}{% endif %}
+              {% if d.owner.phone %}· {{ d.owner.phone }}{% endif %}
+            </div>
+          </div>
+          <div class="flex-shrink-0 text-right">
+            {% if d.is_expired %}
+              <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800">Просрочена {{ d.expires_at }}</span>
+            {% else %}
+              <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-800">До {{ d.expires_at }}</span>
+            {% endif %}
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="text-center py-20 bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl border-2 border-dashed border-gray-300">
+      <h3 class="text-xl font-semibold text-gray-900 mb-2">Ничего срочного</h3>
+      <p class="text-gray-500">Нет путёвок, которые истекли или истекают в ближайшую неделю</p>
+    </div>
+  {% endif %}
+
+</div>
+
+{% endblock %}

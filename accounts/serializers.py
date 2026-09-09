@@ -77,6 +77,12 @@ class DocumentSerializer(serializers.ModelSerializer):
 
 
 class DeviceTokenSerializer(serializers.ModelSerializer):
+    # unique=True в модели заставляет DRF проверять уникальность и отклонять
+    # повторную регистрацию того же устройства. Но вьюха делает update_or_create:
+    # тот же токен должен переезжать на текущего пользователя, иначе после
+    # смены аккаунта на телефоне push уходил бы прежнему владельцу.
+    token = serializers.CharField(max_length=255, validators=[])
+
     class Meta:
         model = DeviceToken
         fields = ["token", "platform"]

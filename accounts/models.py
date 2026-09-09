@@ -32,16 +32,32 @@ class InviteToken(models.Model):
         return f"{self.user.username} ({'использован' if self.used_at else 'активен'})"
 
 
+class Vehicle(models.Model):
+    """Автомобиль клиента. Опционально — только у клиентов с несколькими машинами."""
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="vehicles",
+    )
+    plate = models.CharField(max_length=32, unique=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self) -> str:
+        return self.plate
+
+
 def doc_upload_to(instance: "DocumentFile", filename: str) -> str:
-    oid = instance.document.owner_id or "unknown"
-    kind = (instance.document.kind or Document.Kind.PERSONAL).lower()
+    doc = instance.document
+    oid = doc.owner_id or "unknown"
+    kind = (doc.kind or Document.Kind.BUSINESS).lower()
+    if doc.vehicle_id:
+        return f"docs/{oid}/{doc.vehicle_id}/{kind}/{filename}"
     return f"docs/{oid}/{kind}/{filename}"
 
 
 class Document(models.Model):
 
     class Kind(models.TextChoices):
-        PERSONAL = "personal", _("Личные")
         BUSINESS = "business", _("Путевка")
         DOZVOL   = "dozvol",   _("Дозвол")
 
@@ -49,7 +65,7 @@ class Document(models.Model):
     kind = models.CharField(
         max_length=32,
         choices=Kind.choices,
-        default=Kind.PERSONAL,   # <---- исправлено
+        default=Kind.BUSINESS,
         db_index=True
     )
     is_active = models.BooleanField(default=True, db_index=True)
@@ -58,6 +74,17 @@ class Document(models.Model):
 
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="documents",
+        null=True,
+        blank=True,
+        db_index=True,
+    )
+
+    # Заполняется только у клиентов с несколькими машинами — документ лежит
+    # в папке конкретного автомобиля, а не прямо на пользователе.
+    vehicle = models.ForeignKey(
+        Vehicle,
         on_delete=models.PROTECT,
         related_name="documents",
         null=True,
@@ -77,6 +104,7 @@ class Document(models.Model):
         indexes = [
             models.Index(fields=["owner", "is_active"]),
             models.Index(fields=["owner", "-updated_at"]),
+            models.Index(fields=["vehicle"]),
             models.Index(fields=["kind"]),
             models.Index(fields=["expires_at"]),
         ]

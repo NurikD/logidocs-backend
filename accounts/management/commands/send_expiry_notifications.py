@@ -143,7 +143,18 @@ class Command(BaseCommand):
             tokens=tokens,
         )
         response = messaging.send_each_for_multicast(message)
-        # протухшие токены чистим, чтобы не копить мусор
+
         for token, result in zip(tokens, response.responses):
-            if not result.success:
+            if result.success:
+                continue
+            # Молча глотать ошибку нельзя — иначе не понять, почему не пришёл push
+            self.stdout.write(self.style.ERROR(
+                f"FCM отказал для {token[:20]}...: {result.exception}"
+            ))
+            # протухший/отозванный токен чистим, чтобы не копить мусор;
+            # остальные ошибки (сеть, квота) — временные, токен оставляем
+            if isinstance(result.exception, (messaging.UnregisteredError,
+                                             messaging.SenderIdMismatchError)):
                 DeviceToken.objects.filter(token=token).delete()
+
+        return response.success_count

@@ -152,6 +152,20 @@ class DeviceRegisterAPI(APIView):
         return Response({"ok": True})
 
 
+class DocumentDismissNotificationAPI(APIView):
+    """Клиент нажал «Понятно» — больше не напоминаем по этому документу."""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        doc = get_object_or_404(Document, pk=pk)
+        u = request.user
+        if not (u.is_superuser or doc.owner_id == u.id):
+            raise Http404
+        doc.notification_dismissed = True
+        doc.save(update_fields=["notification_dismissed"])
+        return Response({"ok": True})
+
+
 def set_password_view(request, token):
     invite = get_object_or_404(InviteToken.objects.select_related("user"), token=token)
 

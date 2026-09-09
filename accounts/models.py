@@ -42,7 +42,7 @@ class Document(models.Model):
 
     class Kind(models.TextChoices):
         PERSONAL = "personal", _("Личные")
-        BUSINESS = "business", _("Разрешения/лицензии")
+        BUSINESS = "business", _("Путевка")
         DOZVOL   = "dozvol",   _("Дозвол")
 
     title = models.CharField(max_length=255)

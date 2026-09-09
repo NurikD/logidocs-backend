@@ -164,7 +164,7 @@ def docs_by_kind_personal(request, user_id:int):
 
 @staff_member_required
 def docs_by_kind_business(request, user_id:int):
-    return _docs_by_kind(request,user_id,"business","Разрешения / лицензии")
+    return _docs_by_kind(request,user_id,"business","Путевка")
 
 
 @staff_member_required
@@ -253,7 +253,7 @@ def docs_list(request, user_id:int, kind:str):
 
     map_ru = {
         "personal": "Личные документы",
-        "business": "Разрешения / лицензии",
+        "business": "Путевка",
         "dozvol":   "Дозвол",
     }
 

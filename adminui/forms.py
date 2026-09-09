@@ -13,7 +13,7 @@ class UserCreateForm(forms.Form):
     first_name = forms.CharField(max_length=150, required=False, label="Имя")
     last_name  = forms.CharField(max_length=150, required=False, label="Фамилия")
     phone      = forms.CharField(max_length=32, required=False, label="Телефон")
-    is_staff   = forms.BooleanField(initial=True, required=False, label="Доступ в админку")
+    # is_staff клиентам не выдаём (см. adminui.views.user_create)
     is_active  = forms.BooleanField(initial=True, required=False, label="Активен")
 
 

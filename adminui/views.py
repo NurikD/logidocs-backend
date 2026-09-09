@@ -96,7 +96,10 @@ def user_create(request):
                     first_name=cd.get("first_name",""),
                     last_name=cd.get("last_name",""),
                     phone=cd.get("phone",""),
-                    is_staff=cd.get("is_staff", True),
+                    # Клиенту доступ в админку не нужен — он ходит только
+                    # в мобильное приложение по JWT. is_staff=True открыл бы
+                    # ему весь /admin-ui/ с чужими документами.
+                    is_staff=False,
                     is_active=cd.get("is_active", True),
                 )
                 u.set_unusable_password()

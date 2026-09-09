@@ -1,6 +1,10 @@
 # База данных
 db.sqlite3
 
+# Firebase (service account — секрет для отправки push с бэкенда)
+firebase-credentials.json
+*firebase-adminsdk*.json
+
 # Загруженные файлы (реальные документы клиентов не должны попадать в git)
 media/
 

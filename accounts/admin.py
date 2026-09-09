@@ -21,7 +21,7 @@ class UserAdmin(DjangoUserAdmin):
     inlines = [DocumentInline]
 
     list_display = (
-        "username", "full_name", "email", "is_active",
+        "username", "full_name", "phone", "is_active",
         "is_staff", "last_login", "must_change_pw_badge",
     )
     list_filter = ("is_active", "is_staff", "is_superuser", "must_change_pw", "date_joined")
@@ -33,7 +33,7 @@ class UserAdmin(DjangoUserAdmin):
     # поля в форме
     fieldsets = (
         (None, {"fields": ("username", "password")}),
-        ("Персональные данные", {"fields": ("first_name", "last_name", "email")}),
+        ("Персональные данные", {"fields": ("first_name", "last_name", "email", "phone")}),
         ("Доступ", {"fields": ("is_active", "is_staff", "is_superuser", "groups", "user_permissions")}),
         ("Безопасность", {"fields": ("must_change_pw",)}),
         ("Системные", {"fields": ("last_login", "date_joined")}),

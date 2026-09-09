@@ -11,6 +11,7 @@ from django.utils.translation import gettext_lazy as _
 
 class User(AbstractUser):
     must_change_pw = models.BooleanField(default=False)
+    phone = models.CharField(max_length=32, blank=True)
 
     def __str__(self) -> str:
         return self.get_username()
@@ -97,4 +98,3 @@ class DocumentFile(models.Model):
 
     def __str__(self) -> str:
         return self.filename
-

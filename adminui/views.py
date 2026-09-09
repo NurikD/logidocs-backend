@@ -32,10 +32,10 @@ def _create_invite_link(request, user):
 def users_list(request):
     q = request.GET.get("q","").strip().lower()
 
-    qs = User.objects.only("id","username","first_name","last_name","email","is_active","date_joined")
+    qs = User.objects.only("id","username","first_name","last_name","phone","is_active","date_joined")
 
     if q:
-        qs = qs.filter(username__icontains=q) | qs.filter(first_name__icontains=q) | qs.filter(last_name__icontains=q) | qs.filter(email__icontains=q)
+        qs = qs.filter(username__icontains=q) | qs.filter(first_name__icontains=q) | qs.filter(last_name__icontains=q) | qs.filter(phone__icontains=q)
 
     # считаем ТОЛАЛЬНОЕ количество (до среза)
     users_total_count = qs.count()
@@ -78,7 +78,7 @@ def user_create(request):
                     username=cd["username"],
                     first_name=cd.get("first_name",""),
                     last_name=cd.get("last_name",""),
-                    email=cd.get("email",""),
+                    phone=cd.get("phone",""),
                     is_staff=cd.get("is_staff", True),
                     is_active=cd.get("is_active", True),
                 )

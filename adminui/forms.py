@@ -10,7 +10,7 @@ class UserCreateForm(forms.Form):
     username = forms.CharField(max_length=150, label="Логин")
     first_name = forms.CharField(max_length=150, required=False, label="Имя")
     last_name  = forms.CharField(max_length=150, required=False, label="Фамилия")
-    email      = forms.EmailField(required=False, label="Email")
+    phone      = forms.CharField(max_length=32, required=False, label="Телефон")
     is_staff   = forms.BooleanField(initial=True, required=False, label="Доступ в админку")
     is_active  = forms.BooleanField(initial=True, required=False, label="Активен")
 

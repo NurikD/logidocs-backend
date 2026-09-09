@@ -17,6 +17,9 @@ class LoginSerializer(TokenObtainPairSerializer):
         user = self.user
         data["must_change_pw"] = user.must_change_pw
         data["username"] = user.username
+        # приложение по этому флагу решает, показать клиентский экран
+        # или экран диспетчера со списком истекающих путёвок
+        data["is_superuser"] = user.is_superuser
         return data
 
 
@@ -67,6 +70,7 @@ class DocumentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Document
         fields = [
-            "id", "title", "kind", "is_active", "expires_at",
-            "updated_at", "owner_id", "vehicle_id", "vehicle_plate", "files", "is_expired"
+            "id", "title", "kind", "is_active", "issued_at", "expires_at",
+            "updated_at", "owner_id", "vehicle_id", "vehicle_plate", "files",
+            "is_expired", "is_expiring_soon", "notification_dismissed",
         ]

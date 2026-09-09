@@ -11,6 +11,7 @@ from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.http import url_has_allowed_host_and_scheme
 
 from accounts.models import Document, DocumentFile, InviteToken, Vehicle, add_months  # твои модели
 from .forms import UserCreateForm, DocumentForm, DocumentFilesForm
@@ -328,6 +329,11 @@ def document_delete(request, user_id: int, doc_id: int):
         raise Http404
     doc.delete()  # каскадно удалит DocumentFile
     messages.success(request, "Документ удалён")
+
+    # возвращаемся в ту же папку, откуда удаляли, а не в корень профиля
+    next_url = request.POST.get("next")
+    if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+        return redirect(next_url)
     return redirect("adminui:user_detail", user_id=user_id)
 
 @staff_member_required

@@ -7,7 +7,9 @@ User = get_user_model()
 
 
 class UserCreateForm(forms.Form):
-    username = forms.CharField(max_length=150, label="Логин")
+    # required=False: в режиме "один автомобиль" логином становится номер
+    # машины (см. adminui.views.user_create), поле username не заполняется.
+    username = forms.CharField(max_length=150, required=False, label="Логин")
     first_name = forms.CharField(max_length=150, required=False, label="Имя")
     last_name  = forms.CharField(max_length=150, required=False, label="Фамилия")
     phone      = forms.CharField(max_length=32, required=False, label="Телефон")

@@ -4,21 +4,27 @@ from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 from django.contrib.auth.models import Group
 from django.utils.crypto import get_random_string
 from django.utils.html import format_html
-from .models import Document, User, DocumentFile
+from .models import Document, User, DocumentFile, Vehicle
 
 
 # accounts/admin.py (фрагменты)
 class DocumentInline(admin.StackedInline):
     model = Document
     extra = 1
-    fields = ("title", "kind", "is_active", "expires_at", "updated_at")
+    fields = ("title", "kind", "vehicle", "is_active", "expires_at", "updated_at")
     readonly_fields = ("updated_at",)
 
+
+class VehicleInline(admin.TabularInline):
+    model = Vehicle
+    extra = 1
+    fields = ("plate", "created_at")
+    readonly_fields = ("created_at",)
 
 
 @admin.register(User)
 class UserAdmin(DjangoUserAdmin):
-    inlines = [DocumentInline]
+    inlines = [VehicleInline, DocumentInline]
 
     list_display = (
         "username", "full_name", "phone", "is_active",
@@ -97,10 +103,16 @@ class DocumentFileInline(admin.TabularInline):
 
 @admin.register(Document)
 class DocumentAdmin(admin.ModelAdmin):
-    list_display = ("title", "kind", "owner", "is_active", "expires_at", "updated_at")
-    fields = ("owner", "kind", "title", "is_active", "expires_at", "updated_at")
+    list_display = ("title", "kind", "owner", "vehicle", "is_active", "expires_at", "updated_at")
+    fields = ("owner", "vehicle", "kind", "title", "is_active", "expires_at", "updated_at")
     readonly_fields = ("updated_at",)
     inlines = [DocumentFileInline]
+
+
+@admin.register(Vehicle)
+class VehicleAdmin(admin.ModelAdmin):
+    list_display = ("plate", "owner", "created_at")
+    search_fields = ("plate", "owner__username")
 
 
 admin.site.unregister(Group)

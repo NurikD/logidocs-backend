@@ -6,12 +6,13 @@ from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.admin.views.decorators import staff_member_required
 from django.db import transaction
+from django.db.models import Count
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 
-from accounts.models import Document, DocumentFile, InviteToken  # твои модели
+from accounts.models import Document, DocumentFile, InviteToken, Vehicle  # твои модели
 from .forms import UserCreateForm, DocumentForm, DocumentFilesForm
 
 User = get_user_model()
@@ -35,7 +36,9 @@ def users_list(request):
     qs = User.objects.only("id","username","first_name","last_name","phone","is_active","date_joined")
 
     if q:
-        qs = qs.filter(username__icontains=q) | qs.filter(first_name__icontains=q) | qs.filter(last_name__icontains=q) | qs.filter(phone__icontains=q)
+        qs = (qs.filter(username__icontains=q) | qs.filter(first_name__icontains=q)
+              | qs.filter(last_name__icontains=q) | qs.filter(phone__icontains=q)
+              | qs.filter(vehicles__plate__icontains=q)).distinct()
 
     # считаем ТОЛАЛЬНОЕ количество (до среза)
     users_total_count = qs.count()
@@ -67,15 +70,29 @@ def users_list(request):
 @transaction.atomic
 def user_create(request):
     if request.method == "POST":
+        mode = request.POST.get("mode", "single")
         form = UserCreateForm(request.POST)
         if form.is_valid():
             cd = form.cleaned_data
 
-            if User.objects.filter(username=cd["username"]).exists():
-                form.add_error("username", "Логин уже существует")
+            if mode == "multi":
+                username = cd.get("username", "").strip()
+                plates = [p.strip() for p in request.POST.getlist("vehicle_plate") if p.strip()]
+            else:
+                username = request.POST.get("plate", "").strip()
+                plates = []
+
+            if not username:
+                form.add_error(None, "Укажите логин" if mode == "multi" else "Укажите номер автомобиля")
+            elif User.objects.filter(username=username).exists():
+                form.add_error(None, "Логин уже существует")
+            elif mode == "multi" and not plates:
+                form.add_error(None, "Добавьте хотя бы один автомобиль")
+            elif mode == "multi" and Vehicle.objects.filter(plate__in=plates).exists():
+                form.add_error(None, "Один из номеров уже занят другим клиентом")
             else:
                 u = User(
-                    username=cd["username"],
+                    username=username,
                     first_name=cd.get("first_name",""),
                     last_name=cd.get("last_name",""),
                     phone=cd.get("phone",""),
@@ -84,6 +101,9 @@ def user_create(request):
                 )
                 u.set_unusable_password()
                 u.save()
+
+                for plate in plates:
+                    Vehicle.objects.create(owner=u, plate=plate)
 
                 link = _create_invite_link(request, u)
                 messages.success(request, f"Пользователь создан. Отправьте клиенту ссылку для установки пароля (действует 3 дня):\n{link}")
@@ -100,12 +120,22 @@ def user_create(request):
 def user_detail(request, user_id: int):
     user_obj = get_object_or_404(User, pk=user_id)
 
+    vehicles = list(
+        user_obj.vehicles.annotate(documents_count=Count("documents")).order_by("plate")
+    )
+    if vehicles:
+        docs_no_vehicle_count = Document.objects.filter(owner=user_obj, vehicle__isnull=True).count()
+        return render(request, "adminui/user_detail_vehicles.html", {
+            "user_obj": user_obj,
+            "vehicles": vehicles,
+            "docs_no_vehicle_count": docs_no_vehicle_count,
+        })
+
     qs = (Document.objects
-          .filter(owner=user_obj)
+          .filter(owner=user_obj, vehicle__isnull=True)
           .prefetch_related("files")
           .order_by("title"))
 
-    docs_personal = [d for d in qs if d.kind == Document.Kind.PERSONAL]
     docs_business = [d for d in qs if d.kind == Document.Kind.BUSINESS]
     docs_dozvol   = [d for d in qs if d.kind == Document.Kind.DOZVOL]
 
@@ -113,7 +143,6 @@ def user_detail(request, user_id: int):
         "mode": "view",
         "user_obj": user_obj,
 
-        "docs_personal": docs_personal,
         "docs_business": docs_business,
         "docs_dozvol": docs_dozvol,
 
@@ -123,10 +152,70 @@ def user_detail(request, user_id: int):
     })
 
 
-
-def _docs_by_kind(request, user_id:int, kind:str, title_ru:str):
+@staff_member_required
+def vehicle_add(request, user_id: int):
     user_obj = get_object_or_404(User, pk=user_id)
-    docs = Document.objects.filter(owner=user_obj, kind=kind).order_by("-updated_at")
+    if request.method != "POST":
+        raise Http404
+    plate = request.POST.get("plate", "").strip()
+    if not plate:
+        messages.error(request, "Укажите номер автомобиля")
+    elif Vehicle.objects.filter(plate=plate).exists():
+        messages.error(request, "Такой номер уже занят")
+    else:
+        Vehicle.objects.create(owner=user_obj, plate=plate)
+        messages.success(request, "Автомобиль добавлен")
+    return redirect("adminui:user_detail", user_id=user_id)
+
+
+@staff_member_required
+def vehicle_delete(request, user_id: int, vehicle_id: int):
+    user_obj = get_object_or_404(User, pk=user_id)
+    vehicle_obj = get_object_or_404(Vehicle, pk=vehicle_id, owner=user_obj)
+    if request.method != "POST":
+        raise Http404
+    if vehicle_obj.documents.exists():
+        messages.error(request, "В папке есть документы — сначала удалите их")
+    else:
+        vehicle_obj.delete()
+        messages.success(request, "Автомобиль удалён")
+    return redirect("adminui:user_detail", user_id=user_id)
+
+
+@staff_member_required
+def vehicle_detail(request, user_id: int, vehicle_id: int | None = None):
+    user_obj = get_object_or_404(User, pk=user_id)
+    vehicle_obj = get_object_or_404(Vehicle, pk=vehicle_id, owner=user_obj) if vehicle_id else None
+
+    qs = (Document.objects
+          .filter(owner=user_obj, vehicle=vehicle_obj)
+          .prefetch_related("files")
+          .order_by("title"))
+    docs_business = [d for d in qs if d.kind == Document.Kind.BUSINESS]
+    docs_dozvol   = [d for d in qs if d.kind == Document.Kind.DOZVOL]
+
+    if vehicle_obj:
+        business_url = reverse("adminui:vehicle_docs_list", args=[user_id, vehicle_obj.id, "business"])
+        dozvol_url = reverse("adminui:vehicle_docs_list", args=[user_id, vehicle_obj.id, "dozvol"])
+    else:
+        business_url = reverse("adminui:docs_list", args=[user_id, "business"])
+        dozvol_url = reverse("adminui:docs_list", args=[user_id, "dozvol"])
+
+    return render(request, "adminui/vehicle_detail.html", {
+        "user_obj": user_obj,
+        "vehicle_obj": vehicle_obj,
+        "docs_business": docs_business,
+        "docs_dozvol": docs_dozvol,
+        "business_url": business_url,
+        "dozvol_url": dozvol_url,
+    })
+
+
+
+def _docs_by_kind(request, user_id:int, kind:str, title_ru:str, vehicle_id=None):
+    user_obj = get_object_or_404(User, pk=user_id)
+    vehicle_obj = get_object_or_404(Vehicle, pk=vehicle_id, owner=user_obj) if vehicle_id else None
+    docs = list(Document.objects.filter(owner=user_obj, vehicle=vehicle_obj, kind=kind).order_by("-updated_at"))
 
     if request.method == "POST":
         # создание документа
@@ -140,6 +229,7 @@ def _docs_by_kind(request, user_id:int, kind:str, title_ru:str):
             with transaction.atomic():
                 d = Document.objects.create(
                     owner=user_obj,
+                    vehicle=vehicle_obj,
                     kind=kind,
                     title=title,
                     expires_at=expires_at
@@ -149,27 +239,27 @@ def _docs_by_kind(request, user_id:int, kind:str, title_ru:str):
             messages.success(request, "Документ создан")
             return redirect(request.path)
 
+    for d in docs:
+        if vehicle_obj:
+            d.view_url = reverse("adminui:vehicle_document_view", args=[user_id, vehicle_obj.id, d.id])
+        else:
+            d.view_url = reverse("adminui:document_view", args=[user_id, d.id])
+
+    if vehicle_obj:
+        back_url = reverse("adminui:vehicle_detail", args=[user_id, vehicle_obj.id])
+    elif Vehicle.objects.filter(owner_id=user_id).exists():
+        back_url = reverse("adminui:vehicle_detail_unassigned", args=[user_id])
+    else:
+        back_url = reverse("adminui:user_detail", args=[user_id])
+
     return render(request,"adminui/docs_list.html",{
         "user_obj":user_obj,
+        "vehicle_obj": vehicle_obj,
         "docs":docs,
         "title_ru":title_ru,
         "kind":kind,
+        "back_url": back_url,
     })
-
-
-@staff_member_required
-def docs_by_kind_personal(request, user_id:int):
-    return _docs_by_kind(request,user_id,"personal","Личные документы")
-
-
-@staff_member_required
-def docs_by_kind_business(request, user_id:int):
-    return _docs_by_kind(request,user_id,"business","Путевка")
-
-
-@staff_member_required
-def docs_by_kind_dozvol(request, user_id:int):
-    return _docs_by_kind(request,user_id,"dozvol","Дозвол")
 
 @staff_member_required
 @transaction.atomic
@@ -248,37 +338,62 @@ def document_file_delete(request, user_id: int, doc_id: int, file_id: int):
 
 @staff_member_required
 def docs_list(request, user_id:int, kind:str):
-    if kind not in ["personal","business","dozvol"]:
+    if kind not in ["business","dozvol"]:
         raise Http404
 
     map_ru = {
-        "personal": "Личные документы",
         "business": "Путевка",
         "dozvol":   "Дозвол",
     }
 
     return _docs_by_kind(request, user_id, kind, map_ru[kind])
 
+
 @staff_member_required
-def document_view(request, user_id, doc_id):
+def vehicle_docs_list(request, user_id:int, vehicle_id:int, kind:str):
+    if kind not in ["business","dozvol"]:
+        raise Http404
+
+    map_ru = {
+        "business": "Путевка",
+        "dozvol":   "Дозвол",
+    }
+
+    return _docs_by_kind(request, user_id, kind, map_ru[kind], vehicle_id=vehicle_id)
+
+
+@staff_member_required
+def document_view(request, user_id, doc_id, vehicle_id=None):
     user_obj = get_object_or_404(User, id=user_id)
-    doc = get_object_or_404(Document, owner_id=user_id, id=doc_id)
+    vehicle_obj = get_object_or_404(Vehicle, pk=vehicle_id, owner=user_obj) if vehicle_id else None
+    doc = get_object_or_404(Document, owner_id=user_id, vehicle=vehicle_obj, id=doc_id)
 
     # Добавляем информацию о типе файла
     files = []
     image_extensions = ['.png', '.jpg', '.jpeg', '.webp', '.gif']
 
     for f in doc.files.all():
-        file_data = {
+        if vehicle_obj:
+            file_url = reverse("adminui:vehicle_document_file_serve", args=[user_id, vehicle_obj.id, doc.id, f.id])
+        else:
+            file_url = reverse("adminui:document_file_serve", args=[user_id, doc.id, f.id])
+        files.append({
             'object': f,
-            'is_image': any(f.file.name.lower().endswith(ext) for ext in image_extensions)
-        }
-        files.append(file_data)
+            'is_image': any(f.file.name.lower().endswith(ext) for ext in image_extensions),
+            'url': file_url,
+        })
+
+    if vehicle_obj:
+        back_url = reverse("adminui:vehicle_docs_list", args=[user_id, vehicle_obj.id, doc.kind])
+    else:
+        back_url = reverse("adminui:docs_list", args=[user_id, doc.kind])
 
     return render(request, "adminui/document_view.html", {
         "user_obj": user_obj,
+        "vehicle_obj": vehicle_obj,
         "document": doc,
         "files": files,
+        "back_url": back_url,
     })
 
 
@@ -293,9 +408,9 @@ def password_reset_link(request, user_id: int):
 
 
 @staff_member_required
-def document_file_serve(request, user_id: int, doc_id: int, file_id: int):
+def document_file_serve(request, user_id: int, doc_id: int, file_id: int, vehicle_id=None):
     user_obj = get_object_or_404(User, pk=user_id)
-    doc = get_object_or_404(Document, pk=doc_id, owner=user_obj)
+    doc = get_object_or_404(Document, pk=doc_id, owner=user_obj, vehicle_id=vehicle_id)
     file_obj = get_object_or_404(doc.files, pk=file_id)
     return FileResponse(
         file_obj.file.open("rb"),

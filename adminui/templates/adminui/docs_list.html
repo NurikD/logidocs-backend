@@ -20,14 +20,15 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
         </svg>
         Пользователь: <span class="font-medium">{{ user_obj.username }}</span>
+        {% if vehicle_obj %}· Автомобиль: <span class="font-medium">{{ vehicle_obj.plate }}</span>{% endif %}
       </p>
     </div>
-    <a href="{% url 'adminui:user_detail' user_obj.id %}"
+    <a href="{{ back_url }}"
        class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-gray-700 hover:bg-gray-100 transition-all font-medium border border-gray-200 shadow-sm hover:shadow">
       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
       </svg>
-      Назад в профиль
+      Назад
     </a>
   </div>
 
@@ -100,7 +101,7 @@
   {% if docs %}
     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
       {% for d in docs %}
-        <a href="{% url 'adminui:document_view' user_obj.id d.id %}"
+        <a href="{{ d.view_url }}"
            class="group flex flex-col items-center p-5 bg-white rounded-2xl border border-gray-200 hover:border-blue-300 hover:shadow-lg transition-all duration-200 hover:-translate-y-1">
 
           <!-- Document Icon -->

@@ -1,5 +1,4 @@
 from datetime import date, timedelta
-import calendar
 import mimetypes
 
 from django.conf import settings
@@ -47,15 +46,6 @@ class Vehicle(models.Model):
         return self.plate
 
 
-def add_months(d: date, months: int) -> date:
-    """Календарное прибавление месяцев с клампом дня (31 янв + 2 = 31 мар)."""
-    month_index = d.month - 1 + months
-    year = d.year + month_index // 12
-    month = month_index % 12 + 1
-    day = min(d.day, calendar.monthrange(year, month)[1])
-    return date(year, month, day)
-
-
 DOCUMENT_EXPIRY_WARNING_DAYS = 7
 
 
@@ -82,8 +72,9 @@ class Document(models.Model):
         db_index=True
     )
     is_active = models.BooleanField(default=True, db_index=True)
-    # Дата оформления — вводит админ (сейчас актуально для kind=business);
-    # expires_at считается от неё автоматически (+2 месяца), см. add_months().
+    # Дата оформления — вводит админ (сейчас актуально для kind=business).
+    # Срок путёвки не фиксированный (2 или 3 месяца) — expires_at админ
+    # тоже вводит сам, а не считаем автоматически.
     issued_at = models.DateField(null=True, blank=True)
     expires_at = models.DateField(null=True, blank=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True, db_index=True)

@@ -13,7 +13,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 
-from accounts.models import Document, DocumentFile, InviteToken, Vehicle, add_months  # твои модели
+from accounts.models import Document, DocumentFile, InviteToken, Vehicle  # твои модели
 from .forms import UserCreateForm, DocumentForm, DocumentFilesForm
 
 User = get_user_model()
@@ -251,15 +251,22 @@ def _docs_by_kind(request, user_id:int, kind:str, title_ru:str, vehicle_id=None)
             error = "Название обязательно"
         elif kind == Document.Kind.BUSINESS:
             issued_raw = request.POST.get("issued_at") or None
+            expires_raw = request.POST.get("expires_at") or None
+            # Срок путёвки не всегда 2 месяца — бывает и 3, поэтому дату
+            # окончания вводит админ сам, а не считаем автоматически.
             if not issued_raw:
                 error = "Укажите дату оформления"
+            elif not expires_raw:
+                error = "Укажите дату окончания"
             else:
                 try:
                     issued_at = date.fromisoformat(issued_raw)
+                    expires_at = date.fromisoformat(expires_raw)
                 except ValueError:
-                    error = "Некорректная дата оформления"
+                    error = "Некорректная дата"
                 else:
-                    expires_at = add_months(issued_at, 2)
+                    if expires_at <= issued_at:
+                        error = "Дата окончания должна быть позже даты оформления"
         else:
             expires_at = request.POST.get("expires_at") or None
 

@@ -4,6 +4,7 @@ from django.conf.urls.static import static
 from django.urls import path, include
 from django.contrib import admin
 from accounts.views import LoginView, DocumentFileDownloadAPI # твой TokenObtainPairView кастомный
+from rest_framework_simplejwt.views import TokenRefreshView
 
 from accounts.views import (
     LoginView, ChangePasswordView,
@@ -19,6 +20,7 @@ urlpatterns = [
 
     # auth
     path("api/auth/token/", LoginView.as_view()),
+    path("api/auth/token/refresh/", TokenRefreshView.as_view()),
     path("api/auth/change-password/", ChangePasswordView.as_view()),
 
     path("api/vehicles/", VehicleListAPI.as_view()),

@@ -5,6 +5,7 @@ from django.contrib.auth.models import Group
 from django.utils.crypto import get_random_string
 from django.utils.html import format_html
 from .models import Document, User, DocumentFile, Vehicle
+from .forms import RussianAdminAuthenticationForm
 
 
 # accounts/admin.py (фрагменты)
@@ -116,3 +117,5 @@ class VehicleAdmin(admin.ModelAdmin):
 
 
 admin.site.unregister(Group)
+
+admin.site.login_form = RussianAdminAuthenticationForm

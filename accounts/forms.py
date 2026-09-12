@@ -1,4 +1,5 @@
 from django import forms
+from django.contrib.admin.forms import AdminAuthenticationForm
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 
@@ -32,3 +33,13 @@ class SetPasswordFormWithoutOldPassword(forms.Form):
                 except ValidationError as e:
                     self.add_error("password", e)
         return c
+
+
+class RussianAdminAuthenticationForm(AdminAuthenticationForm):
+    """Вход в /admin/ у нас читают клиенты и диспетчер, а не разработчики —
+    подписи полей должны быть на русском, как везде в adminui."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["username"].label = "Логин"
+        self.fields["password"].label = "Пароль"

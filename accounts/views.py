@@ -1,3 +1,5 @@
+import os
+
 from rest_framework.permissions import IsAuthenticated, IsAdminUser, BasePermission
 from rest_framework.response import Response
 from rest_framework.generics import ListAPIView, RetrieveAPIView, get_object_or_404
@@ -7,7 +9,7 @@ from rest_framework import status
 from django.contrib.auth.hashers import check_password
 from django.db.models import Count
 from rest_framework_simplejwt.views import TokenObtainPairView
-from django.http import FileResponse, Http404
+from django.http import FileResponse, Http404, HttpResponse
 
 from .models import User, Document, DocumentFile, InviteToken, Vehicle, DeviceToken
 from .serializers import (
@@ -182,6 +184,30 @@ class DocumentExpiringListAPI(ListAPIView):
               .select_related("owner", "vehicle")
               .order_by("expires_at"))
         return [d for d in qs if d.is_expired or d.is_expiring_soon]
+
+
+def cron_send_expiry_notifications(request):
+    """Внешний триггер ежедневной рассылки push (see management/commands/
+    send_expiry_notifications.py).
+
+    Бесплатный тариф PythonAnywhere не даёт Scheduled Tasks — расписание
+    держит внешний cron-сервис, который раз в сутки дёргает этот URL.
+    Секрет в query-параметре, а не в пути, чтобы не светился в логах веб-сервера
+    построчно с самим доменом; сравнение constant-time, чтобы не утекало
+    через тайминг. Без верного секрета — обычный 404, а не 403: посторонний
+    не должен даже понять, что по этому адресу что-то есть.
+    """
+    import hmac
+    from io import StringIO
+    from django.core.management import call_command
+
+    secret = os.environ.get("CRON_SECRET")
+    if not secret or not hmac.compare_digest(request.GET.get("key", ""), secret):
+        raise Http404
+
+    out = StringIO()
+    call_command("send_expiry_notifications", stdout=out)
+    return HttpResponse(out.getvalue(), content_type="text/plain; charset=utf-8")
 
 
 def set_password_view(request, token):

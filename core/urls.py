@@ -11,7 +11,7 @@ from accounts.views import (
     DocumentReplaceAPI, DocumentDeleteAPI,
     VehicleListAPI, DeviceRegisterAPI,
     DocumentDismissNotificationAPI, DocumentExpiringListAPI,
-    set_password_view,
+    set_password_view, cron_send_expiry_notifications,
 )
 
 urlpatterns = [
@@ -34,6 +34,7 @@ urlpatterns = [
     path("admin-ui/", include("adminui.urls", namespace="adminui")),
 
     path("set-password/<str:token>/", set_password_view, name="set_password"),
+    path("cron/send-expiry-notifications/", cron_send_expiry_notifications),
 ]
 
 # Медиа отдаём напрямую только в dev — в проде файлы должны идти через

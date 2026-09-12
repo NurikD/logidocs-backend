@@ -157,6 +157,23 @@ def user_detail(request, user_id: int):
 
 
 @staff_member_required
+def user_delete(request, user_id: int):
+    user_obj = get_object_or_404(User, pk=user_id)
+    if request.method != "POST":
+        raise Http404
+    if user_obj.is_superuser:
+        messages.error(request, "Нельзя удалить суперпользователя")
+    elif user_obj.documents.exists():
+        messages.error(request, "У пользователя есть документы — сначала удалите их")
+    else:
+        username = user_obj.username
+        user_obj.delete()  # каскадно удалит автомобили без документов, токены, приглашения
+        messages.success(request, f"Пользователь {username} удалён")
+        return redirect("adminui:users_list")
+    return redirect("adminui:user_detail", user_id=user_id)
+
+
+@staff_member_required
 def vehicle_add(request, user_id: int):
     user_obj = get_object_or_404(User, pk=user_id)
     if request.method != "POST":
